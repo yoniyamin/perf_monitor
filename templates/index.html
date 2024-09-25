@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Latency Performance Graph</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #F9F9F9;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+        }
+
+        .container {
+            width: 80%;
+            margin: auto;
+            padding: 20px;
+            background-color: #FFF;
+            border-radius: 8px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #FF6F00;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #qlik-logo {
+            display: block;
+            margin: 0 auto;
+            width: 150px;
+        }
+
+        #warningMessage {
+            color: red;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        #timeRange {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #555;
+            text-align: center;
+        }
+
+        #latencyChart {
+            margin-top: 20px;
+        }
+
+        #stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            padding: 4px;
+            background-color: #00b140;
+            color: white;
+            border-radius: 10px;
+            text-align: center;
+            width: 30%;
+        }
+
+        footer {
+            display: flex;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        footer a {
+            text-decoration: none;
+            color: #FF6F00;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img id="qlik-logo" src="/static/Qlik-Logo.svg" alt="Qlik Logo">
+        <h1>Latency Performance Graph</h1>
+        <input type="file" id="logfile">
+        <button onclick="uploadLog()">Upload</button>
+
+        <span id="warningMessage"></span> <!-- Warning message section -->
+        <div id="timeRange"></div>
+        <div id="latencyChart"></div>
+        <div id="stats"></div>
+    </div>
+
+    <footer>
+        <p>By <a href="#">Yonatan Yamin</a></p>
+    </footer>
+
+    <script>
+        function uploadLog() {
+            const fileInput = document.getElementById('logfile');
+            const formData = new FormData();
+            formData.append('logfile', fileInput.files[0]);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.warning) {
+                    document.getElementById('warningMessage').innerText = data.warning;
+                } else {
+                    document.getElementById('warningMessage').innerText = "";
+                }
+                plotGraph(data.latencies);
+                displayStats(data.stats);
+            });
+        }
+
+        function plotGraph(latencies) {
+            const timestamps = latencies.map(l => l.timestamp);
+            const sourceLatency = latencies.map(l => l.source);
+            const targetLatency = latencies.map(l => l.target);
+            const handlingLatency = latencies.map(l => l.handling);
+
+            const sourceTrace = {
+                x: timestamps,
+                y: sourceLatency,
+                mode: 'lines',
+                name: 'Source Latency',
+                line: { color: 'orange' }
+            };
+
+            const targetTrace = {
+                x: timestamps,
+                y: targetLatency,
+                mode: 'lines',
+                name: 'Target Latency',
+                line: { color: 'blue' }
+            };
+
+            const handlingTrace = {
+                x: timestamps,
+                y: handlingLatency,
+                mode: 'lines',
+                name: 'Handling Latency',
+                line: { color: 'green' }
+            };
+
+            const layout = {
+                title: 'Latency Over Time',
+                xaxis: {
+                    title: 'Timestamp',
+                    tickformat: "%Y-%m-%d %H:%M:%S",
+                    type: 'date'
+                },
+                yaxis: {
+                    title: 'Latency (seconds)',
+                    rangemode: 'tozero',
+                },
+                plot_bgcolor: "#F9F9F9",
+                paper_bgcolor: "#fff",
+                showlegend: true
+            };
+
+            Plotly.newPlot('latencyChart', [sourceTrace, targetTrace, handlingTrace], layout);
+        }
+
+        function displayStats(stats) {
+            const timeRange = `Time Range: ${stats.time_range.start} to ${stats.time_range.end}`;
+            const maxSource = `Max Source: ${stats.max_source.toFixed(2)}s at ${stats.max_source_time}`;
+            const maxTarget = `Max Target: ${stats.max_target.toFixed(2)}s at ${stats.max_target_time}`;
+            const maxHandling = `Max Handling: ${stats.max_handling.toFixed(2)}s at ${stats.max_handling_time}`;
+            const avgSource = `Avg Source: ${stats.avg_source.toFixed(2)}s`;
+            const avgTarget = `Avg Target: ${stats.avg_target.toFixed(2)}s`;
+            const avgHandling = `Avg Handling: ${stats.avg_handling.toFixed(2)}s`;
+
+            document.getElementById('timeRange').innerText = timeRange;
+
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-item source">
+                    <h3>Source</h3>
+                    <p>${maxSource}</p>
+                    <p>${avgSource}</p>
+                </div>
+                <div class="stat-item target">
+                    <h3>Target</h3>
+                    <p>${maxTarget}</p>
+                    <p>${avgTarget}</p>
+                </div>
+                <div class="stat-item handling">
+                    <h3>Handling</h3>
+                    <p>${maxHandling}</p>
+                    <p>${avgHandling}</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
