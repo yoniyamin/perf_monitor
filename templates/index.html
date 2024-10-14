@@ -31,10 +31,15 @@
             margin-bottom: 20px;
         }
 
-        #qlik-logo {
+        #TBFQ-logo {
             display: block;
             margin: 0 auto;
             width: 150px;
+        }
+
+        #explaination {
+            text-align: center;
+            margin-right: 100px;
         }
 
         #warningMessage {
@@ -85,11 +90,14 @@
 </head>
 <body>
     <div class="container">
-        <img id="qlik-logo" src="/static/Qlik-Logo.svg" alt="Qlik Logo">
+        <img id="TBFQ-logo" src="/static/new_design1.jpg" alt="ToolBox for QDI Logo">
         <h1>Latency Performance Graph</h1>
+        <div id="explaination" style="white-space: pre">
+                    The application will build a latency plot based on Qlik Replicate task log
+                    <strong>Note</strong> that the PERFORMANCE component must be set to trace/verbose!.
+        </div>
         <input type="file" id="logfile">
         <button onclick="uploadLog()">Upload</button>
-
         <span id="warningMessage"></span> <!-- Warning message section -->
         <div id="timeRange"></div>
         <div id="latencyChart"></div>
@@ -97,7 +105,9 @@
     </div>
 
     <footer>
+       <!--
         <p>By <a href="#">Yonatan Yamin</a></p>
+        -->
     </footer>
 
     <script>
